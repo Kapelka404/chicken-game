@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Охотник за курицами</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+        
+        body {
+            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #87CEEB, #98FB98);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+        
+        .game-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        .game-header {
+            background: linear-gradient(45deg, #FF6B6B, #FF8E53);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            border-radius: 20px 20px 0 0;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            background: #FFD700;
+            padding: 10px;
+            font-weight: bold;
+        }
+        
+        .game-area {
+            position: relative;
+            width: 100%;
+            height: 500px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%2390EE90"/><path d="M0 50 Q25 30,50 50 T100 50" fill="%2378C878"/></svg>');
+            background-size: 100px 100px;
+            cursor: crosshair;
+            overflow: hidden;
+        }
+        
+        .chicken {
+            position: absolute;
+            width: 60px;
+            height: 70px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 70"><path d="M30 10 Q40 5 50 15 Q55 25 45 30 Q50 45 35 50 Q25 55 20 45 Q10 40 15 30 Q5 25 10 15 Q20 5 30 10" fill="%23FFFFFF" stroke="%23000" stroke-width="2"/><circle cx="40" cy="20" r="3" fill="%23000"/><path d="M25 35 Q30 40 35 35" stroke="%23000" stroke-width="2" fill="none"/><path d="M15 25 Q10 20 5 25" stroke="%23FF6B6B" stroke-width="3" fill="none"/></svg>');
+            background-size: contain;
+            background-repeat: no-repeat;
+            transition: transform 0.1s;
+            z-index: 10;
+        }
+        
+        .chicken.hit {
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 70"><path d="M30 10 Q40 5 50 15 Q55 25 45 30 Q50 45 35 50 Q25 55 20 45 Q10 40 15 30 Q5 25 10 15 Q20 5 30 10" fill="%23FF6B6B" stroke="%23000" stroke-width="2"/><text x="20" y="35" font-family="Arial" font-size="14" fill="white">X_X</text></svg>');
+            transform: scale(1.2) rotate(180deg);
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        button {
+            padding: 12px 25px;
+            font-size: 16px;
+            border: none;
+            border-radius: 50px;
+            background: linear-gradient(45deg, #FF6B6B, #FF8E53);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        .instructions {
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            margin-top: 15px;
+            text-align: center;
+            max-width: 600px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .hit-effect {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: radial-gradient(circle, #FF0000 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: hitAnim 0.5s forwards;
+        }
+        
+        @keyframes hitAnim {
+            0% { transform: scale(0); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+        
+        @media (max-width: 768px) {
+            .game-area {
+                height: 400px;
+            }
+            
+            button {
+                padding: 15px 30px;
+                font-size: 18px;
+            }
+            
+            .stats {
+                font-size: 14px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .game-area {
+                height: 300px;
+            }
+            
+            .chicken {
+                width: 50px;
+                height: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-header">
+            <h1>🐔 Охотник за курицами 🎯</h1>
+        </div>
+        <div class="stats">
+            <div>Очки: <span id="score">0</span></div>
+            <div>Время: <span id="timer">60</span>с</div>
+            <div>Куриц: <span id="chickenCount">0</span></div>
+        </div>
+        <div class="game-area" id="gameArea">
+            <!-- Курицы будут появляться здесь -->
+        </div>
+    </div>
+    
+    <div class="controls">
+        <button id="startBtn">Начать игру</button>
+        <button id="pauseBtn">Пауза</button>
+        <button id="resetBtn">Новая игра</button>
+    </div>
+    
+    <div class="instructions">
+        <p><strong>Как играть:</strong> Кликай/тапай по курицам, чтобы их "убить". У тебя 60 секунд!</p>
+        <p>💻 Компьютер: Кликай мышкой | 📱 Телефон: Нажимай пальцем</p>
+    </div>
+
+    <script>
+        // Элементы игры
+        const gameArea = document.getElementById('gameArea');
+        const scoreElement = document.getElementById('score');
+        const timerElement = document.getElementById('timer');
+        const chickenCountElement = document.getElementById('chickenCount');
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+
+        // Переменные игры
+        let score = 0;
+        let timeLeft = 60;
+        let gameActive = false;
+        let gameTimer;
+        let chickenTimer;
+        let chickens = [];
+
+        // Начало игры
+        startBtn.addEventListener('click', startGame);
+        pauseBtn.addEventListener('click', togglePause);
+        resetBtn.addEventListener('click', resetGame);
+
+        // Обработчик кликов по игровой области
+        gameArea.addEventListener('click', function(e) {
+            if (!gameActive) return;
+            
+            // Создаем эффект попадания
+            createHitEffect(e.clientX, e.clientY);
+        });
+
+        // Создание эффекта попадания
+        function createHitEffect(x, y) {
+            const effect = document.createElement('div');
+            effect.className = 'hit-effect';
+            effect.style.left = (x - 15) + 'px';
+            effect.style.top = (y - 15) + 'px';
+            gameArea.appendChild(effect);
+            
+            setTimeout(() => {
+                effect.remove();
+            }, 500);
+        }
+
+        // Запуск игры
+        function startGame() {
+            if (gameActive) return;
+            
+            gameActive = true;
+            score = 0;
+            timeLeft = 60;
+            updateUI();
+            
+            // Очистка предыдущих куриц
+            chickens.forEach(chicken => chicken.remove());
+            chickens = [];
+            
+            // Таймер игры
+            gameTimer = setInterval(() => {
+                timeLeft--;
+                timerElement.textContent = timeLeft;
+                
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+            
+            // Создание куриц
+            chickenTimer = setInterval(createChicken, 1000);
+            
+            startBtn.disabled = true;
+        }
+
+        // Создание курицы
+        function createChicken() {
+            if (!gameActive) return;
+            
+            const chicken = document.createElement('div');
+            chicken.className = 'chicken';
+            
+            // Случайная позиция
+            const maxX = gameArea.offsetWidth - 60;
+            const maxY = gameArea.offsetHeight - 70;
+            const x = Math.random() * maxX;
+            const y = Math.random() * maxY;
+            
+            chicken.style.left = x + 'px';
+            chicken.style.top = y + 'px';
+            
+            // Обработчик клика по курице
+            chicken.addEventListener('click', function(e) {
+                if (!gameActive) return;
+                
+                e.stopPropagation();
+                score += 10;
+                chicken.classList.add('hit');
+                updateUI();
+                
+                setTimeout(() => {
+                    chicken.remove();
+                    chickens = chickens.filter(c => c !== chicken);
+                }, 200);
+            });
+            
+            gameArea.appendChild(chicken);
+            chickens.push(chicken);
+            updateUI();
+            
+            // Автоматическое удаление через 3 секунды
+            setTimeout(() => {
+                if (chicken.parentNode && !chicken.classList.contains('hit')) {
+                    chicken.remove();
+                    chickens = chickens.filter(c => c !== chicken);
+                    updateUI();
+                }
+            }, 3000);
+        }
+
+        // Пауза/продолжение
+        function togglePause() {
+            if (!gameActive) return;
+            
+            gameActive = !gameActive;
+            
+            if (gameActive) {
+                chickenTimer = setInterval(createChicken, 1000);
+                gameTimer = setInterval(() => {
+                    timeLeft--;
+                    timerElement.textContent = timeLeft;
+                    
+                    if (timeLeft <= 0) {
+                        endGame();
+                    }
+                }, 1000);
+                pauseBtn.textContent = 'Пауза';
+            } else {
+                clearInterval(chickenTimer);
+                clearInterval(gameTimer);
+                pauseBtn.textContent = 'Продолжить';
+            }
+        }
+
+        // Конец игры
+        function endGame() {
+            gameActive = false;
+            clearInterval(gameTimer);
+            clearInterval(chickenTimer);
+            
+            startBtn.disabled = false;
+            
+            alert(`Игра окончена!\nВаш счет: ${score} очков!`);
+        }
+
+        // Сброс игры
+        function resetGame() {
+            gameActive = false;
+            clearInterval(gameTimer);
+            clearInterval(chickenTimer);
+            
+            score = 0;
+            timeLeft = 60;
+            
+            chickens.forEach(chicken => chicken.remove());
+            chickens = [];
+            
+            updateUI();
+            startBtn.disabled = false;
+            pauseBtn.textContent = 'Пауза';
+        }
+
+        // Обновление интерфейса
+        function updateUI() {
+            scoreElement.textContent = score;
+            timerElement.textContent = timeLeft;
+            chickenCountElement.textContent = chickens.length;
+        }
+
+        // Адаптация для мобильных устройств
+        gameArea.addEventListener('touchstart', function(e) {
+            if (!gameActive) return;
+            
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('click', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            
+            gameArea.dispatchEvent(mouseEvent);
+        });
+    </script>
+</body>
+</html>
