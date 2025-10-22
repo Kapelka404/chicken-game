@@ -274,23 +274,44 @@
             chicken.style.top = y + 'px';
             
             // Обработчик клика по курице
-            chicken.addEventListener('click', function(e) {
-                if (!gameActive) return;
-                
-                e.stopPropagation();
-                score += 10;
-                chicken.classList.add('hit');
-                updateUI();
-                
-                setTimeout(() => {
-                    chicken.remove();
-                    chickens = chickens.filter(c => c !== chicken);
-                }, 200);
-            });
-            
-            gameArea.appendChild(chicken);
-            chickens.push(chicken);
-            updateUI();
+            // Обработчик кликов по игровой области
+gameArea.addEventListener('click', function(e) {
+    if (!gameActive) return;
+    
+    // Получаем координаты для компьютера и телефона
+    const rect = gameArea.getBoundingClientRect();
+    const x = e.clientX || e.touches[0].clientX;
+    const y = e.clientY || e.touches[0].clientY;
+    
+    // Создаем эффект попадания
+    createHitEffect(x, y);
+});
+
+// Отдельный обработчик для сенсорных устройств
+gameArea.addEventListener('touchstart', function(e) {
+    if (!gameActive) return;
+    
+    e.preventDefault(); // Предотвращаем стандартное поведение
+    
+    const touch = e.touches[0];
+    const rect = gameArea.getBoundingClientRect();
+    
+    // Создаем клик в месте касания
+    const clickEvent = new MouseEvent('click', {
+        clientX: touch.clientX,
+        clientY: touch.clientY,
+        bubbles: true
+    });
+    
+    // Проверяем, попали ли в курицу
+    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (element && element.classList.contains('chicken')) {
+        element.dispatchEvent(clickEvent);
+    }
+    
+    // Создаем эффект попадания
+    createHitEffect(touch.clientX, touch.clientY);
+});
             
             // Автоматическое удаление через 3 секунды
             setTimeout(() => {
@@ -360,21 +381,11 @@
             timerElement.textContent = timeLeft;
             chickenCountElement.textContent = chickens.length;
         }
-
-        // Адаптация для мобильных устройств
-        gameArea.addEventListener('touchstart', function(e) {
-            if (!gameActive) return;
-            
-            e.preventDefault();
-            const touch = e.touches[0];
-            const mouseEvent = new MouseEvent('click', {
-                clientX: touch.clientX,
-                clientY: touch.clientY
-            });
             
             gameArea.dispatchEvent(mouseEvent);
         });
     </script>
 </body>
 </html>
+
 
